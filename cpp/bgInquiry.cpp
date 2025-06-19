@@ -50,7 +50,7 @@ int GetEncoderClsid(const WCHAR *format, CLSID *pClsid)
     return -1; // failure
 }
 
-inline uint64_t fnv1a_hash(const char *str, size_t length)
+inline uint64_t fnv1a_hash(const char *str, size_t length) noexcept
 {
     const uint64_t FNV_OFFSET_BASIS = 14695981039346656037ULL;
     const uint64_t FNV_PRIME = 1099511628211ULL;
