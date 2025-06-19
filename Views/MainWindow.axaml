@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:windowLogger.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+        x:Class="windowLogger.Views.MainWindow"
+        x:DataType="vm:MainVm"
+        d:DataContext="{x:Static vm:DesignData.Sample}"
+        Title="windowLogger">
+    <Design.DataContext>
+        <vm:DesignViewVm />
+    </Design.DataContext>
+    <Grid ColumnDefinitions="30*,1,70*">
+        <StackPanel Grid.Column="0" Margin="15">
+            <Button Margin="5" Name="ClearHis">Clear History</Button>
+            <Button Margin="5" Name="ClearCac">Clear Cache</Button>
+            <Button Margin="5" Name="ViewSet">View Setting</Button>
+            <Button Margin="5" Name="RecStart">Start Record</Button>
+            <Button Margin="5" Name="RecStop">Stop Record</Button>
+            <TextBlock Margin="5" Text="{Binding WindowInfoUpdateVm.PrevAppName}" ToolTip.Tip="{Binding WindowInfoUpdateVm.PrevAppPath}">PrevAppName</TextBlock>
+            <TextBlock Margin="5" Text="{Binding WindowInfoUpdateVm.SessionTimeText}">SessionTimeText</TextBlock>
+            <Image x:Name="AppIcon" Margin="5" Source="{Binding WindowInfoUpdateVm.AppIcon}" />
+        </StackPanel>
+        <Border Grid.Column="1" Width="2" Background="Gray"></Border>
+        <StackPanel Grid.Column="2" Margin="15">
+            <Border Background="Gray" Height="30" Width="200" HorizontalAlignment="Left" CornerRadius="10" Margin="0,0,0,10">
+                <TextBox BorderThickness="0" Background="Transparent" VerticalAlignment="Center" FontStyle="Italic" Name="SearchTextBox">Search for record</TextBox>
+            </Border>
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding SearchAppVm.SearchResultCardCollection}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="90*,10*">
+                                <Button Grid.Column="0" Background="Gray" CornerRadius="8" Margin="10" HorizontalAlignment="Stretch">
+                                    <StackPanel Height="100">
+                                        <Grid ColumnDefinitions="20*,50*,30*" Margin="5">
+                                            <Image Grid.Column="0" HorizontalAlignment="Left" Width="100" Height="100" Source="{Binding CardAppIcon}"></Image>
+                                        </Grid>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </StackPanel>
+    </Grid>
+</Window>

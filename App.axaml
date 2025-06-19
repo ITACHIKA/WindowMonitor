@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="windowLogger.App"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+    <TrayIcon.Icons>
+        <TrayIcons>
+        <TrayIcon ToolTipText="WindowLogger">
+            <TrayIcon.Menu>
+                <NativeMenu>
+                    <NativeMenuItem Header="Show" Click="TrayShow_OnClick"/>
+                    <NativeMenuItem Header="Hide" Click="TrayHide_OnClick"/>
+                    <NativeMenuItemSeparator />
+                    <NativeMenuItem Header="Quit" Click="TrayQuit_OnClick"/>
+                </NativeMenu>
+            </TrayIcon.Menu>
+        </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
+</Application>
