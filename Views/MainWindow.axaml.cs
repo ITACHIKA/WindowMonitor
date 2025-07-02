@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reactive.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -11,6 +12,7 @@ public partial class MainWindow : Window
 {
     private SettingWindow? SettingWindow{ get; set; }
     private DesignViewVm? DesignVm { get; set; }
+    public List<ulong> OpenedWindowHashList { get; set; }
     public MainWindow()
     {
         InitializeComponent();
@@ -45,6 +47,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SearchResultCardOnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: CardViewModel card })
+        {
+            Console.WriteLine(card.CardAppIndex);
+            var CardDetailWindow = new AppInfoDetailWindow(card.CardAppIndex);
+        }
+    }
     private async void SearchTextBoxOnKeyDown(object? sender, KeyEventArgs e)
     {
         try

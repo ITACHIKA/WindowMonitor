@@ -23,19 +23,23 @@
             <Image x:Name="AppIcon" Margin="5" Source="{Binding WindowInfoUpdateVm.AppIcon}" />
         </StackPanel>
         <Border Grid.Column="1" Width="2" Background="Gray"></Border>
-        <StackPanel Grid.Column="2" Margin="15">
-            <Border Background="Gray" Height="30" Width="200" HorizontalAlignment="Left" CornerRadius="10" Margin="0,0,0,10">
-                <TextBox BorderThickness="0" Background="Transparent" VerticalAlignment="Center" FontStyle="Italic" Name="SearchTextBox">Search for record</TextBox>
+        <Grid Grid.Column="2" RowDefinitions="10*,90*" Margin="15">
+            <Border Grid.Row="0" Background="Gray" Height="30" Width="200" HorizontalAlignment="Left" CornerRadius="10" Margin="0,0,0,10">
+                 <TextBox BorderThickness="0" Background="Transparent" VerticalAlignment="Center" FontStyle="Italic" Name="SearchTextBox">Search for record</TextBox>
             </Border>
-            <ScrollViewer>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding SearchAppVm.SearchResultCardCollection}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid ColumnDefinitions="90*,10*">
-                                <Button Grid.Column="0" Background="Gray" CornerRadius="8" Margin="10" HorizontalAlignment="Stretch">
+                                <Button Grid.Column="0" Background="Gray" CornerRadius="8" Margin="10" HorizontalAlignment="Stretch" Click="SearchResultCardOnClick">
                                     <StackPanel Height="100">
                                         <Grid ColumnDefinitions="20*,50*,30*" Margin="5">
-                                            <Image Grid.Column="0" HorizontalAlignment="Left" Width="100" Height="100" Source="{Binding CardAppIcon}"></Image>
+                                            <Image Grid.Column="0" HorizontalAlignment="Left" Height="100" Source="{Binding CardAppIcon}"></Image>
+                                            <StackPanel Grid.Column="1" Margin="15 5 5 5">
+                                                <TextBlock Text="{Binding CardAppName}"/>
+                                                <TextBlock Text="{Binding CardAppPath}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip.Tip="{Binding CardAppPath}"/>
+                                            </StackPanel>
                                         </Grid>
                                     </StackPanel>
                                 </Button>
@@ -44,6 +48,6 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </ScrollViewer>
-        </StackPanel>
+        </Grid>
     </Grid>
 </Window>

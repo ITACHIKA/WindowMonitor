@@ -20,8 +20,7 @@ public partial class SettingWindow : ReactiveWindow<SettingPageVm>
         {
             App.MainVm.SettingPageVm.UnacceptedNumbInputMsg.RegisterHandler(async interaction =>
             {
-                var box = MessageBoxManager.GetMessageBoxStandard("Error", "Number input not accepted",
-                    ButtonEnum.Ok);
+                var box = MessageBoxManager.GetMessageBoxStandard("Error", "Number input not accepted", ButtonEnum.Ok);
                 var result = await box.ShowAsPopupAsync(this);
                 interaction.SetOutput(Unit.Default);
             }).DisposeWith(disposables);

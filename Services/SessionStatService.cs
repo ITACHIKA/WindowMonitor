@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
 using Microsoft.Data.Sqlite;
-using Tmds.DBus.Protocol;
 using windowLogger.Models;
 
 namespace windowLogger.Services;
@@ -16,6 +17,55 @@ public static class SessionStatService
     private const string DbConnCommand = $"Data Source={DbPath}";
     private static Dictionary<ulong, AppSessionData> AppSessionCollection { get; set; } = new();
     private static Dictionary<string, (ulong,string)> AppNameToHashPath { get; set; } = new();
+    
+    private static Channel<Func<Task>> _writeQueue = Channel.CreateUnbounded<Func<Task>>();
+
+    static SessionStatService()
+    {
+        _ = WriteTaskProcessor();
+    }
+
+    private static void AddWriteTask(Func<Task> writeTask)
+    {
+        _writeQueue.Writer.TryWrite(writeTask);
+    }
+
+    private static async Task WriteTaskProcessor()
+    {
+        await foreach (var writeTask in _writeQueue.Reader.ReadAllAsync())
+        {
+            for (var attempt = 0;; attempt++)
+            {
+                try
+                {
+                    await writeTask();
+                    return;
+                }
+                catch (SqliteException ex) when (ex.SqliteErrorCode==5)
+                {
+                    if (attempt > 3)
+                    {
+                        throw;
+                    }
+                    Console.WriteLine("sqlite db lock, retry count="+attempt.ToString());
+                    await Task.Delay(attempt * 10);
+                }
+            }
+        }
+    }
+    
+    private static void EnableDbWAL()
+    {
+        using var db = new SqliteConnection(DbConnCommand);
+        db.Open();
+        using var cmd = db.CreateCommand();
+        cmd.CommandText = "PRAGMA journal_mode=WAL";
+        var result = cmd.ExecuteScalar();
+        if (!string.Equals(result?.ToString(), "wal", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Failed to enable WAL mode.");
+        }
+    }
     public static void InitRecord()
     {
         if (File.Exists(DbPath))
@@ -23,6 +73,7 @@ public static class SessionStatService
             // Console.WriteLine("Found");
             try
             {
+                EnableDbWAL();
                 using var DbConnection = new SqliteConnection(DbConnCommand);
                 DbConnection.Open();
                 using var readerCommand = DbConnection.CreateCommand();
@@ -61,6 +112,7 @@ public static class SessionStatService
                     DataJson TEXT
                 );";
                 DbInitCommand.ExecuteNonQuery();
+                EnableDbWAL();
             }
             catch (Exception e)
             {
@@ -69,83 +121,80 @@ public static class SessionStatService
         }
     }
 
-    public static async Task AddRecord(string appName,string appPath, ulong appHash, AppSingleSessionData aSSD)
+    public static async Task AddRecord(string appName,string appPath, ulong appHash, AppSingleSessionData appSingleSessionData)
     {
-        await Task.Run(async () =>
+        if (AppSessionCollection.TryGetValue(appHash, out var appSessionData))
         {
-            if (AppSessionCollection.TryGetValue(appHash, out var appSessionData))
+            Console.WriteLine("Record Exist in DB");
+            appSessionData.SingleTimeDataList.Add(appSingleSessionData);
+            await using var DbConnection = new SqliteConnection(DbConnCommand);
+            await DbConnection.OpenAsync();
+            await using var DbReadRowCommand = DbConnection.CreateCommand();
+            DbReadRowCommand.CommandText = @"
+                SELECT * FROM SessionDataCollection WHERE AppHash = @appHash;";
+            DbReadRowCommand.Parameters.AddWithValue("@appHash", appHash.ToString());
+            var reader = await DbReadRowCommand.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
             {
-                // Console.WriteLine("Record Exist in DB");
-                appSessionData.SingleTimeDataList.Add(aSSD);
-                await using var DbConnection = new SqliteConnection(DbConnCommand);
-                await DbConnection.OpenAsync();
-                await using var DbReadRowCommand = DbConnection.CreateCommand();
-                DbReadRowCommand.CommandText = @"
-                    SELECT * FROM SessionDataCollection WHERE AppHash = @appHash;";
-                DbReadRowCommand.Parameters.AddWithValue("@appHash", appHash.ToString());
-                var reader = await DbReadRowCommand.ExecuteReaderAsync();
-                if (await reader.ReadAsync())
+                string RawAppHash = reader.GetString(0);
+                string RawDataJson = reader.GetString(3);
+                // Console.WriteLine(RawAppName);
+                // Console.WriteLine(RawAppHash);
+                // Console.WriteLine(RawDataJson);
+                AddWriteTask(async () =>
                 {
-                    string RawAppHash = reader.GetString(0);
-                    string RawAppName = reader.GetString(1);
-                    string RawAppPath = reader.GetString(2);
-                    string RawDataJson = reader.GetString(3);
-                    // Console.WriteLine(RawAppName);
-                    // Console.WriteLine(RawAppHash);
-                    // Console.WriteLine(RawDataJson);
+                    await using var writeConn = new SqliteConnection(DbConnCommand);
+                    await writeConn.OpenAsync();
+                    // AppSessionData RowSessionData = JsonSerializer.Deserialize<AppSessionData>(RawDataJson)!; // read the existing record
+                    // RowSessionData.SingleTimeDataList.Add(appSingleSessionData); // add a recorded session to list
+                    await using var updateCmd = writeConn.CreateCommand();
+                    updateCmd.CommandText = @"UPDATE SessionDataCollection SET DataJson=@dataJson WHERE AppHash = @appHash;";
+                    updateCmd.Parameters.AddWithValue("@appHash", RawAppHash);
+                    updateCmd.Parameters.AddWithValue("@dataJson", JsonSerializer.Serialize(AppSessionCollection[appHash]));
+                    await updateCmd.ExecuteNonQueryAsync();
+                });
 
-                    AppSessionData RowSessionData = JsonSerializer.Deserialize<AppSessionData>(RawDataJson)!; // read the existing record
-                    RowSessionData.SingleTimeDataList.Add(aSSD); // add a recorded session to list
-                    await using var deleteCmd = DbConnection.CreateCommand();
-                    deleteCmd.CommandText = "DELETE FROM SessionDataCollection WHERE AppHash = @appHash;";
-                    deleteCmd.Parameters.AddWithValue("@appHash", RawAppHash);
-                    await deleteCmd.ExecuteNonQueryAsync(); // delete row before re-inserting the updated one
-
-                    var DbWriteBackCommand = DbConnection.CreateCommand();
-                    DbWriteBackCommand.CommandText = @"
-                    INSERT INTO SessionDataCollection (AppHash, AppName,AppPath, DataJson) VALUES (@appHash,@appName,@appPath,@dataJson);";
-                    DbWriteBackCommand.Parameters.AddWithValue("@appName", RawAppName);
-                    DbWriteBackCommand.Parameters.AddWithValue("@appHash", RawAppHash);
-                    DbWriteBackCommand.Parameters.AddWithValue("@appPath", RawAppPath);
-                    DbWriteBackCommand.Parameters.AddWithValue("@dataJson", JsonSerializer.Serialize(RowSessionData));
-                    await DbWriteBackCommand.ExecuteNonQueryAsync();
-                }
             }
-            else
+        }
+        else
+        {
+            Console.WriteLine("Not Found in DB");
+            var temp = new AppSessionData(appSingleSessionData);
+            AppSessionCollection.Add(appHash, temp);
+            AppNameToHashPath.Add(appName, (appHash, appPath));
+            AddWriteTask(async () =>
             {
-                var temp = new AppSessionData(aSSD);
-                AppSessionCollection.Add(appHash, temp);
-                AppNameToHashPath.Add(appName, (appHash, appPath));
                 await using var DbConnection = new SqliteConnection(DbConnCommand);
                 await DbConnection.OpenAsync();
                 await using var DbAddRowCommand = DbConnection.CreateCommand();
                 DbAddRowCommand.CommandText = @"
-                    INSERT INTO SessionDataCollection (AppHash, AppName,AppPath, DataJson) VALUES (@appHash,@appName,@appPath,@dataJson);";
+                INSERT INTO SessionDataCollection (AppHash, AppName,AppPath, DataJson) VALUES (@appHash,@appName,@appPath,@dataJson);";
                 DbAddRowCommand.Parameters.AddWithValue("@appName", appName);
                 DbAddRowCommand.Parameters.AddWithValue("@appHash", appHash.ToString());
                 DbAddRowCommand.Parameters.AddWithValue("@appPath", appPath);
                 DbAddRowCommand.Parameters.AddWithValue("@dataJson", JsonSerializer.Serialize(temp));
                 await DbAddRowCommand.ExecuteNonQueryAsync();
-            }
-        });
+            });
+        }
     }
     public static async Task DelRecord()
     {
         await Task.Run(async () =>
         {
-            using var DbConnection = new SqliteConnection(DbConnCommand);
+            await using var DbConnection = new SqliteConnection(DbConnCommand);
             DbConnection.Open();
-            using var DbRemoveAllCommand = DbConnection.CreateCommand();
+            await using var DbRemoveAllCommand = DbConnection.CreateCommand();
             DbRemoveAllCommand.CommandText = @"DELETE FROM SessionDataCollection;";
             await DbRemoveAllCommand.ExecuteNonQueryAsync();
-            AppSessionCollection = [];
+            AppSessionCollection.Clear();
+            AppNameToHashPath.Clear();
         });
     }
 
-    public static List<InquiredAppSessionData> AppDataInquire(string appName)
+    public static List<InquiredAppSessionData> AppDataInquireByName(string appName)
     {
         var MatchAppSessionData = new List<InquiredAppSessionData>();
-        var DictSearchResult = AppNameToHashPath.Where(kvp => kvp.Key.Contains(appName));
+        var DictSearchResult = AppNameToHashPath.Where(kvp => kvp.Key.Contains(appName,StringComparison.OrdinalIgnoreCase));
         foreach (var (AppName, ValueTuple) in DictSearchResult)
         {
             var AppHash = ValueTuple.Item1;
@@ -153,5 +202,28 @@ public static class SessionStatService
             MatchAppSessionData.Add(new InquiredAppSessionData(AppName, AppPath,AppHash, AppSessionCollection[AppHash]));
         }
         return MatchAppSessionData;
+    }
+
+    private static Dictionary<ulong,Bitmap> _imageCache = new();
+    private const string CachePath = "cache/";
+    public static async Task<Bitmap> LoadImage(ulong appHash)
+    {
+        if (_imageCache.TryGetValue(appHash, out var image))
+        {
+            return image;
+        }
+        var path = CachePath + appHash.ToString();
+        Bitmap? AppIcon = null;
+        try
+        {
+            await using var png = File.OpenRead(path);
+            AppIcon = new Bitmap(png);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+        _imageCache.Add(appHash,AppIcon!); // doesn't matter if app has no icon
+        return AppIcon!;
     }
 }

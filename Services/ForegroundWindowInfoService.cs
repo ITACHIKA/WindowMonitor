@@ -27,7 +27,7 @@ public static partial class ForegroundWindowInfoService
         }
         else
         {
-            FgAppInfo = new FgAppInfoReturnStruct { appName = "", appHash = 0, returnState = returnState, appPath = "",Sw=sw };
+            FgAppInfo = new FgAppInfoReturnStruct { appName = "", appHash = 0, returnState = HiconState.NOUPDATE, appPath = "",Sw=sw };
         }
         Marshal.FreeCoTaskMem(FgAppInfoRaw.appName);
         Marshal.FreeCoTaskMem(FgAppInfoRaw.appNameW);

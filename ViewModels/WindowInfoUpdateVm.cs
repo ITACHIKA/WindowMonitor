@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
-using MsBox.Avalonia.ViewModels.Commands;
 using windowLogger.Models;
 using windowLogger.Services;
 
@@ -21,7 +19,7 @@ public class WindowInfoUpdateVm : INotifyPropertyChanged
     public string? PrevAppName { get; set; }
     public string? PrevAppPath { get; set; }
     private ulong PrevAppHash { get; set; }
-    private double SessionTimeMillis { get; set; } = 0;
+    private double SessionTimeMillis { get; set; }
     private TimeSpan SessionTimeFormat { get; set; }
     public string? SessionTimeText { get; set; }
 
@@ -33,21 +31,7 @@ public class WindowInfoUpdateVm : INotifyPropertyChanged
 
     private static DateTime SessionStartTime { get; set; } = DateTime.Now;
     private static DateTime LastUpdateTime { get; set; } 
-    private async Task LoadImg(ulong hash)
-    {
-        var path = CachePath + hash.ToString();
-        try
-        {
-            await using var png = File.OpenRead(path);
-            AppIcon?.Dispose();
-            AppIcon = new Bitmap(png);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            AppIcon = null;
-        }
-    }
+    
     public void StartTimer()
     {
         TimedInfoService.OnInfoUpdate += InfoUpdateHandler;
@@ -84,9 +68,9 @@ public class WindowInfoUpdateVm : INotifyPropertyChanged
                     if ((DateTime.Now - LastUpdateTime).TotalSeconds >= MinimumRecordSessionSpan)
                     {
                         Console.WriteLine("Update On Fg WIND");
-                        SessionStartTime = DateTime.Now;
                         SessionTimeMillis = fgAppInfo.Sw.Elapsed.TotalMilliseconds;
                         var SingleSessionTime = new AppSingleSessionData(SessionStartTime, DateTime.Now);
+                        SessionStartTime = DateTime.Now;
                         await SessionStatService.AddRecord(PrevAppName!,PrevAppPath!, PrevAppHash, SingleSessionTime);
                     }
                     else
@@ -94,7 +78,7 @@ public class WindowInfoUpdateVm : INotifyPropertyChanged
                         SessionTimeMillis = DateTime.Now.Subtract(SessionStartTime).TotalMilliseconds;
                     }
                 }
-                await LoadImg(fgAppInfo.appHash);
+                AppIcon = await SessionStatService.LoadImage(fgAppInfo.appHash);
                 PrevAppPath = fgAppInfo.appPath;
                 PrevAppName = fgAppInfo.appName;
                 PrevAppHash = fgAppInfo.appHash;

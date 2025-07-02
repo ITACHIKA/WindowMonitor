@@ -26,13 +26,13 @@ public partial class SettingPageVm : ReactiveObject
 	public string? MinRecSec
 	{
 		get => _minRecSec;
-		set { this.RaiseAndSetIfChanged(ref _minRecSec, value); }
+		set => this.RaiseAndSetIfChanged(ref _minRecSec, value);
 	}
 
 	public string? CapIntv
 	{
 		get => _capIntv;
-		set { this.RaiseAndSetIfChanged(ref _capIntv, value); }
+		set => this.RaiseAndSetIfChanged(ref _capIntv, value);
 	}
 
 	public bool UseDebugConsoleIsChecked
@@ -99,7 +99,6 @@ public partial class SettingPageVm : ReactiveObject
 				{
 				}
 
-				;
 				_configFile.Add("UseDebugConsole", "True");
 				_configFile.Add("MinRecSec", "0");
 				_configFile.Add("CaptureInterval", "100");
@@ -113,7 +112,6 @@ public partial class SettingPageVm : ReactiveObject
 			{
 			}
 
-			;
 			_configFile.Add("UseDebugConsole", "True");
 			_configFile.Add("MinRecSec", "0");
 			_configFile.Add("CaptureInterval", "100");

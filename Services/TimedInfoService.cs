@@ -5,15 +5,16 @@ using windowLogger.Models;
 
 namespace windowLogger.Services;
 
-public class TimedInfoService
+public static class TimedInfoService
 {
     private static Timer? _timer;
 
     public static int ConfiguredMillis { get; set; }
     public static event Action<FgAppInfoReturnStruct>? OnInfoUpdate;
-    public static async Task<FgAppInfoReturnStruct> FgAppInfoInquiry()
+
+    private static async Task<FgAppInfoReturnStruct> FgAppInfoInquiry()
     {
-        return await Task.Run(() => ForegroundWindowInfoService.GetFgAppReturnInfo());
+        return await Task.Run(ForegroundWindowInfoService.GetFgAppReturnInfo);
     }
     public static void StartTimer(int millis)
     {

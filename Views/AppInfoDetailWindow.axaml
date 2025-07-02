@@ -1,0 +1,26 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:v="using:windowLogger.Views"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="480"
+        x:Class="windowLogger.Views.AppInfoDetailWindow"
+        x:DataType="v:AppInfoDetailWindow"
+        Title="windowLogger Detail View">
+    <Grid RowDefinitions="30*,5*,65*" Margin="10">
+        <Grid Grid.Row="0" ColumnDefinitions="20*,10*,70*" Margin="10">
+            <Image Grid.Column="0" Source="{Binding AppIcon}"/>
+            <StackPanel Grid.Column="2">
+                <TextBlock Margin="5" Text="{Binding AppName}"/>
+                <TextBlock Margin="5" Text="{Binding AppPath}"/>
+                <TextBlock Margin="5" Text="{Binding AppHashString}"/>
+            </StackPanel>
+        </Grid>
+        <StackPanel Grid.Row="2" Margin="10">
+            <TextBlock >
+                <Run Text="Total run time:" />
+                <Run Text="{Binding AppTotalRuntimeString}"/>
+            </TextBlock>
+        </StackPanel>
+    </Grid>
+</Window>
