@@ -34,12 +34,13 @@ public static class SessionStatService
     {
         await foreach (var writeTask in _writeQueue.Reader.ReadAllAsync())
         {
+            Console.WriteLine("Receive write task");
             for (var attempt = 0;; attempt++)
             {
                 try
                 {
                     await writeTask();
-                    return;
+                    break;
                 }
                 catch (SqliteException ex) when (ex.SqliteErrorCode==5)
                 {
@@ -98,7 +99,7 @@ public static class SessionStatService
         }
         else
         {
-            Console.WriteLine("Not Found");
+            //Console.WriteLine("Not Found");
             try
             {
                 using var DbConnection = new SqliteConnection(DbConnCommand);
@@ -125,7 +126,7 @@ public static class SessionStatService
     {
         if (AppSessionCollection.TryGetValue(appHash, out var appSessionData))
         {
-            Console.WriteLine("Record Exist in DB");
+            //Console.WriteLine("Record Exist in DB");
             appSessionData.SingleTimeDataList.Add(appSingleSessionData);
             await using var DbConnection = new SqliteConnection(DbConnCommand);
             await DbConnection.OpenAsync();
@@ -158,7 +159,7 @@ public static class SessionStatService
         }
         else
         {
-            Console.WriteLine("Not Found in DB");
+            //Console.WriteLine("Not Found in DB");
             var temp = new AppSessionData(appSingleSessionData);
             AppSessionCollection.Add(appHash, temp);
             AppNameToHashPath.Add(appName, (appHash, appPath));
@@ -204,13 +205,18 @@ public static class SessionStatService
         return MatchAppSessionData;
     }
 
-    private static Dictionary<ulong,Bitmap> _imageCache = new();
+    public static (Dictionary<ulong, AppSessionData>,Dictionary<string, (ulong,string)>) GetFullData()
+    {
+        return (AppSessionCollection,AppNameToHashPath);
+    }
+
+    private static Dictionary<ulong,Bitmap?> _imageCache = new();
     private const string CachePath = "cache/";
     public static async Task<Bitmap> LoadImage(ulong appHash)
     {
         if (_imageCache.TryGetValue(appHash, out var image))
         {
-            return image;
+            return image!; // doesn't matter if app has no icon
         }
         var path = CachePath + appHash.ToString();
         Bitmap? AppIcon = null;
@@ -223,7 +229,7 @@ public static class SessionStatService
         {
             Console.WriteLine(e);
         }
-        _imageCache.Add(appHash,AppIcon!); // doesn't matter if app has no icon
+        _imageCache.Add(appHash,AppIcon);
         return AppIcon!;
     }
 }

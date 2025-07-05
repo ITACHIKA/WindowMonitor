@@ -38,6 +38,7 @@ public partial class MainWindow : Window
             SearchTextBox.GotFocus += SearchTextBoxOnFocus;
             SearchTextBox.LostFocus += SearchTextBoxLostFocus;
             SearchTextBox.KeyDown += SearchTextBoxOnKeyDown;
+            TotalSummaryButton.Click += TotalSummaryButtonOnClick;
         }
         else
         {
@@ -47,6 +48,10 @@ public partial class MainWindow : Window
         }
     }
 
+    private void TotalSummaryButtonOnClick(object sender, RoutedEventArgs e)
+    {
+        var SummaryWindow = new SummaryPageView();
+    }
     private void SearchResultCardOnClick(object? sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: CardViewModel card })

@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:v="using:windowLogger.Views"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="480"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
         x:Class="windowLogger.Views.AppInfoDetailWindow"
         x:DataType="v:AppInfoDetailWindow"
         Title="windowLogger Detail View">

@@ -26,7 +26,6 @@ public class WindowInfoUpdateVm : INotifyPropertyChanged
     public static int MinimumRecordSessionSpan { get; set; }
     private bool FirstRun { get; set; } = true;
     public static int CaptureInterval { get; set; }
-    public List<string> IgnoredAppList { get; set; } = [""];
     
 
     private static DateTime SessionStartTime { get; set; } = DateTime.Now;

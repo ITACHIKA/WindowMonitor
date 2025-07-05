@@ -24,9 +24,12 @@
         </StackPanel>
         <Border Grid.Column="1" Width="2" Background="Gray"></Border>
         <Grid Grid.Column="2" RowDefinitions="10*,90*" Margin="15">
-            <Border Grid.Row="0" Background="Gray" Height="30" Width="200" HorizontalAlignment="Left" CornerRadius="10" Margin="0,0,0,10">
-                 <TextBox BorderThickness="0" Background="Transparent" VerticalAlignment="Center" FontStyle="Italic" Name="SearchTextBox">Search for record</TextBox>
-            </Border>
+            <Grid Grid.Row="0" ColumnDefinitions="40*,35*,25*">
+                <Border Grid.Column="0" Background="Gray" Height="30" Width="200" HorizontalAlignment="Left" CornerRadius="10" Margin="0,0,0,10">
+                    <TextBox BorderThickness="0" Background="Transparent" VerticalAlignment="Center" FontStyle="Italic" Name="SearchTextBox">Search for record</TextBox>
+                </Border>
+                <Button Grid.Column="1" CornerRadius="5" Margin="10,0,0,10" Name="TotalSummaryButton">Usage Summary</Button>
+            </Grid>
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding SearchAppVm.SearchResultCardCollection}">
                     <ItemsControl.ItemTemplate>

@@ -23,7 +23,7 @@ public partial class AppInfoDetailWindow : Window , INotifyPropertyChanged
 	{
 		InitializeComponent();
 		this.Width = 640;
-		this.Height = 480;
+		this.Height = 400;
 		DataContext = this;
 		var currentApp = App.MainVm.SearchAppVm.InquiryResult![referenceIndex];
 		AppHash = currentApp.AppHash;

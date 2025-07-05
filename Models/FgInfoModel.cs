@@ -57,7 +57,7 @@ public class InquiredAppSessionData
     public string AppName { get; set; }
     public string AppPath { get; set; }
     public ulong AppHash { get; set; }
-    public AppSessionData AppSessionData { get; set; }
+    public AppSessionData? AppSessionData { get; set; }
 
     public InquiredAppSessionData(string appName, string appPath,ulong appHash, AppSessionData appSessionData)
     {
@@ -65,5 +65,11 @@ public class InquiredAppSessionData
         AppPath = appPath;
         AppHash = appHash;
         AppSessionData = appSessionData;
+    }
+    public InquiredAppSessionData(string appName, string appPath,ulong appHash)
+    {
+        AppName = appName;
+        AppPath = appPath;
+        AppHash = appHash;
     }
 }

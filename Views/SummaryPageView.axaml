@@ -1,0 +1,46 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:windowLogger.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="windowLogger.Views.SummaryPageView"
+        x:DataType="vm:SummaryPageVm"
+        Title="windowLogger Summary Page">
+    <Grid RowDefinitions="10*,5,90*" Margin="20">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+            <ComboBox Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left"
+                      PlaceholderText="Select Period" SelectedItem="{Binding SelectedPeriod}"
+                      ItemsSource="{Binding PeriodList}" />
+            <Button Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="20,0,0,0"
+                    Content="Generate Report" Command="{Binding SummarizeCommand}"/>
+        </Grid>
+        <Grid Grid.Row="2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding SortedAppStatistics}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="90*,10*" Margin="10">
+                                <StackPanel Grid.Column="0" Height="100">
+                                    <Grid ColumnDefinitions="20*,40*,40*" Margin="5">
+                                        <Image Grid.Column="0" HorizontalAlignment="Left" Height="100"
+                                               Source="{Binding SummaryAppIcon}"/>
+                                        <StackPanel Grid.Column="1" Margin="15 5 5 5">
+                                            <TextBlock Text="{Binding SummaryAppName}" />
+                                            <TextBlock Text="{Binding SummaryAppPath}"
+                                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                                       ToolTip.Tip="{Binding SummaryAppPath }" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="{Binding AppTotalRunTime}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>
