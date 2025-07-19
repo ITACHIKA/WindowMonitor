@@ -1,10 +1,13 @@
+using System;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using windowLogger.ViewModels;
+using System.Runtime.InteropServices;
+using CommunityToolkit.WinUI.Notifications;
 
 namespace windowLogger;
+
 
 public partial class App : Application
 {
@@ -22,6 +25,11 @@ public partial class App : Application
             desktop.MainWindow = new Views.MainWindow();
             desktop.MainWindow.AttachDevTools();
             DataContext = MainVm;
+
+            new ToastContentBuilder()
+                .AddText("windowLogger is running in background")
+                .Show();
+
         }
 
         base.OnFrameworkInitializationCompleted();

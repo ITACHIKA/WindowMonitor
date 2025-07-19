@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     private SettingWindow? SettingWindow{ get; set; }
     private DesignViewVm? DesignVm { get; set; }
     public List<ulong> OpenedWindowHashList { get; set; }
+    private Boolean _firstOpen = true;
     public MainWindow()
     {
         InitializeComponent();
@@ -22,6 +23,14 @@ public partial class MainWindow : Window
         {
             ((Window)s!).Hide();
             e.Cancel = true;
+        };
+        this.Opened += (_, __) =>
+        {
+            if (_firstOpen)
+            {
+                _firstOpen = false;
+                this.Hide();
+            }
         };
         if (!Design.IsDesignMode)
         {
@@ -46,6 +55,11 @@ public partial class MainWindow : Window
             DataContext = DesignVm;
             Console.WriteLine("Design mode");
         }
+    }
+
+    public sealed override void Hide()
+    {
+        base.Hide();
     }
 
     private void TotalSummaryButtonOnClick(object sender, RoutedEventArgs e)
