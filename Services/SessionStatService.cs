@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 using Avalonia.Media.Imaging;
 using Microsoft.Data.Sqlite;
 using windowLogger.Models;
@@ -16,7 +17,7 @@ public static class SessionStatService
     private const string DbPath = "./recdata.db";
     private const string DbConnCommand = $"Data Source={DbPath}";
     private static Dictionary<ulong, AppSessionData> AppSessionCollection { get; set; } = new();
-    private static Dictionary<string, (ulong,string)> AppNameToHashPath { get; set; } = new();
+    private static Dictionary<string, List<(ulong,string)>> AppNameToHashPath { get; set; } = new();
     
     private static Channel<Func<Task>> _writeQueue = Channel.CreateUnbounded<Func<Task>>();
 
@@ -89,7 +90,14 @@ public static class SessionStatService
                     ulong AppHash = ulong.Parse(RawAppHash);
                     AppSessionData RowSessionData = JsonSerializer.Deserialize<AppSessionData>(RawDataJson)!;
                     AppSessionCollection.Add(AppHash, RowSessionData);
-                    AppNameToHashPath.Add(RawAppName,(AppHash,RawAppPath));
+                    try
+                    {
+                        AppNameToHashPath.Add(RawAppName, new List<(ulong, string)> { (AppHash, RawAppPath) });
+                    }
+                    catch (ArgumentException)
+                    {
+                        AppNameToHashPath[RawAppName].Add((AppHash, RawAppPath));
+                    }
                 }
             }
             catch (Exception e)
@@ -162,7 +170,14 @@ public static class SessionStatService
             //Console.WriteLine("Not Found in DB");
             var temp = new AppSessionData(appSingleSessionData);
             AppSessionCollection.Add(appHash, temp);
-            AppNameToHashPath.Add(appName, (appHash, appPath));
+            try
+            {
+                AppNameToHashPath.Add(appName, new List<(ulong, string)> { (appHash, appPath) });
+            }
+            catch (ArgumentException)
+            {
+                AppNameToHashPath[appName].Add((appHash, appPath));
+            }
             AddWriteTask(async () =>
             {
                 await using var DbConnection = new SqliteConnection(DbConnCommand);
@@ -196,16 +211,20 @@ public static class SessionStatService
     {
         var MatchAppSessionData = new List<InquiredAppSessionData>();
         var DictSearchResult = AppNameToHashPath.Where(kvp => kvp.Key.Contains(appName,StringComparison.OrdinalIgnoreCase));
-        foreach (var (AppName, ValueTuple) in DictSearchResult)
+        foreach (var (AppName, ValueList) in DictSearchResult)
         {
-            var AppHash = ValueTuple.Item1;
-            var AppPath = ValueTuple.Item2;
-            MatchAppSessionData.Add(new InquiredAppSessionData(AppName, AppPath,AppHash, AppSessionCollection[AppHash]));
+            foreach (var appRecordSameName in ValueList)
+            {
+                var AppHash = appRecordSameName.Item1;
+                var AppPath = appRecordSameName.Item2;
+                MatchAppSessionData.Add(new InquiredAppSessionData(AppName, AppPath,AppHash, AppSessionCollection[AppHash]));
+            }
+
         }
         return MatchAppSessionData;
     }
 
-    public static (Dictionary<ulong, AppSessionData>,Dictionary<string, (ulong,string)>) GetFullData()
+    public static (Dictionary<ulong, AppSessionData>,Dictionary<string, List<(ulong,string)>>) GetFullData()
     {
         return (AppSessionCollection,AppNameToHashPath);
     }

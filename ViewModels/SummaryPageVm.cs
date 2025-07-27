@@ -31,7 +31,7 @@ public class SummaryPageVm : ReactiveObject
 {
 	public List<string> IgnoredAppList { get; set; } = ["LockApp"];
 	private static Dictionary<ulong, AppSessionData> AppSessionCollection { get; set; }  = new();
-	private static Dictionary<string, (ulong, string)> AppNameToHashPath { get; set; } = new();
+	private static Dictionary<string, List<(ulong, string)>> AppNameToHashPath { get; set; } = new();
 
 	public ObservableCollection<string> PeriodList { get; set; } = ["Last Week", "Last Month", "All times"];
 	public ObservableCollection<AppSessionSummaryData> SummedAppStatistics { get; set; } = new();
@@ -73,21 +73,25 @@ public class SummaryPageVm : ReactiveObject
 			case "Last Month": periodStartTime = DateTime.Now.AddMonths(-1); break;
 		}
 
-		foreach (KeyValuePair<string, (ulong, string)> pair in AppNameToHashPath)
+		foreach (KeyValuePair<string, List<(ulong, string)>> pair in AppNameToHashPath)
 		{
-			var AppHash = pair.Value.Item1;
-			var AppPath = pair.Value.Item2;
 			var AppName = pair.Key;
-			TimeSpan totalRunTime = TimeSpan.Zero;
-			var AppSessionData = AppSessionCollection[AppHash];
-			foreach (var singleRecord in AppSessionData.SingleTimeDataList)
+			foreach (var singleAppRecordWithSameName in pair.Value)
 			{
-				if (singleRecord.StartTime >= periodStartTime)
+				var AppHash = singleAppRecordWithSameName.Item1;
+				var AppPath = singleAppRecordWithSameName.Item2;
+			
+				TimeSpan totalRunTime = TimeSpan.Zero;
+				var AppSessionData = AppSessionCollection[AppHash];
+				foreach (var singleRecord in AppSessionData.SingleTimeDataList)
 				{
-					totalRunTime+=singleRecord.EndTime-singleRecord.StartTime;
+					if (singleRecord.StartTime >= periodStartTime)
+					{
+						totalRunTime+=singleRecord.EndTime-singleRecord.StartTime;
+					}
 				}
+				SummedAppStatistics.Add(new AppSessionSummaryData(AppName,AppPath,AppHash,totalRunTime,await SessionStatService.LoadImage(AppHash)));
 			}
-			SummedAppStatistics.Add(new AppSessionSummaryData(AppName,AppPath,AppHash,totalRunTime,await SessionStatService.LoadImage(AppHash)));
 		}
 		SortedAppStatistics = new ObservableCollection<AppSessionSummaryData>(SummedAppStatistics.OrderByDescending(app => app.AppTotalRunTime));
 	}
